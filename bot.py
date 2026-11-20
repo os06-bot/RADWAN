@@ -66,7 +66,7 @@ async def get_ai_reply(user_id: int, user_text: str) -> str:
     for attempt in range(3):
         try:
             response = await client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama-3.1-8b-instant",
                 messages=messages,
                 temperature=0.5,
                 max_tokens=300,
