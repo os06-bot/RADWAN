@@ -3,11 +3,11 @@ import asyncio
 from collections import defaultdict
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types
-from openai import AsyncOpenAI
+from groq import AsyncGroq
 
 # --- جلب البيانات من إعدادات Render ---
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 MY_TELEGRAM_ID = 801421612
 
 SYSTEM_PROMPT = """
@@ -39,11 +39,7 @@ SYSTEM_PROMPT = """
 
 bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
-
-client = AsyncOpenAI(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=OPENROUTER_API_KEY,
-)
+client = AsyncGroq(api_key=GROQ_API_KEY)
 
 # ذاكرة مؤقتة تحفظ آخر 8 رسائل لكل مستخدم
 chat_history = defaultdict(list)
@@ -70,7 +66,7 @@ async def get_ai_reply(user_id: int, user_text: str) -> str:
     for attempt in range(3):
         try:
             response = await client.chat.completions.create(
-                model="meta-llama/llama-3.3-70b-instruct:free",
+                model="llama-3.3-70b-versatile",
                 messages=messages,
                 temperature=0.5,
                 max_tokens=300,
@@ -117,7 +113,7 @@ async def start_web_server():
 
 async def main():
     await start_web_server()
-    print("البوت شغال تمام مع OpenRouter...", flush=True)
+    print("البوت شغال تمام مع Groq...", flush=True)
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
