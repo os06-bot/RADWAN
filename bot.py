@@ -23,7 +23,7 @@ SYSTEM_PROMPT = """
 3. ممنوع تماماً تذكر متجر "سوبر نوفا" أو تفتح سيرة أي خدمات أو مبيعات من تلقاء نفسك في الترحيب أو المحادثات العادية. لا تتكلم عن المتجر إلا إذا سأل الشخص بشكل صريح عن خدمة من خدماتنا، أو سأل عن المتجر، أو طلب رابط المتجر أو الأسعار.
 
 أولاً: قاعدة التبادل وروابط القنوات (الأولوية القصوى):
-إذا أرسل الشخص رابط قناة تيليجرام أو كتب "ت" أو "تبادل" أو "تبادل اشتراك" أو "تم" أو أي عبارة تدل على طلب تبادل، رد عليه فوراً بهذه الرسالة بالضبط فقط بدون أي إضافة:
+إذا أرسل الشخص رابط قناة تيليجرام أو كتب "ت" أو "تت" أو "اشتراك" (بقصد تبادل القنوات) أو "تبادل" أو "تبادل اشتراك" أو أي عبارة تدل على طلب تبادل، رد عليه فوراً بهذه الرسالة بالضبط فقط بدون أي إضافة:
 نورني
 https://t.me/r24Star
 
@@ -51,28 +51,32 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 chat_history = defaultdict(list)
 
 async def get_ai_reply(user_id: int, user_text: str) -> str:
-    try:
-        chat_history[user_id].append(
-            genai_types.Content(role="user", parts=[genai_types.Part.from_text(text=user_text)])
-        )
-        chat_history[user_id] = chat_history[user_id][-8:]
+    chat_history[user_id].append(
+        genai_types.Content(role="user", parts=[genai_types.Part.from_text(text=user_text)])
+    )
+    chat_history[user_id] = chat_history[user_id][-8:]
 
-        response = await client.aio.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=chat_history[user_id],
-            config=genai_types.GenerateContentConfig(
-                system_instruction=SYSTEM_PROMPT,
-                temperature=0.5,
-            ),
-        )
-
-        chat_history[user_id].append(
-            genai_types.Content(role="model", parts=[genai_types.Part.from_text(text=response.text)])
-        )
-        return response.text
-    except Exception as e:
-        print(f"Error: {e}", flush=True)
-        return f"الخطأ هو: {e}"
+    for attempt in range(3):
+        try:
+            response = await client.aio.models.generate_content(
+                model="gemini-3.8-flash",
+                contents=chat_history[user_id],
+                config=genai_types.GenerateContentConfig(
+                    system_instruction=SYSTEM_PROMPT,
+                    temperature=0.5,
+                ),
+            )
+            chat_history[user_id].append(
+                genai_types.Content(role="model", parts=[genai_types.Part.from_text(text=response.text)])
+            )
+            return response.text
+        except Exception as e:
+            print(f"Attempt {attempt + 1} Error: {e}", flush=True)
+            if "503" in str(e) and attempt < 2:
+                await asyncio.sleep(2)
+                continue
+            chat_history[user_id].pop()
+            return "معليش، صار خلل بسيط. جرب ابعث رسالتك من جديد."
 
 # الرد على رسائل حسابك الشخصي (Telegram Business)
 @dp.business_message()
