@@ -47,7 +47,7 @@ client = genai.Client(api_key=GEMINI_API_KEY)
 async def get_ai_reply(user_text: str) -> str:
     try:
         response = await client.aio.models.generate_content(
-            model="gemini-3.0-flash",
+            model="gemini-3.8-flash",
             contents=user_text,
             config=genai_types.GenerateContentConfig(
                 system_instruction=SYSTEM_PROMPT,
