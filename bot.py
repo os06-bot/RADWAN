@@ -55,8 +55,8 @@ async def get_ai_reply(user_text: str) -> str:
             ),
         )
         return response.text
-    except Exception as e:
-print(f"Error: {e}", flush=True)
+except Exception as e:
+        print(f"Error: {e}", flush=True)
         return f"الخطأ هو: {e}"
 
 # الرد على رسائل حسابك الشخصي (Telegram Business)
